@@ -677,6 +677,13 @@ func (r *RenderData) ApiURL() string {
 	return r.rt.ApiURL(r.remoteIP)
 }
 
+// Info returns a *models.Info structure
+func (r *RenderData) Info() *models.Info {
+	i := *r.rt.dt.Info
+	i.License = r.rt.dt.AllLicenses()
+	return &i
+}
+
 // GenerateToken will generate a token for a machine
 // within a template.  If the machine is not known, a
 // token will be generate with create machine access only
@@ -722,6 +729,9 @@ func (r *RenderData) GenerateToken() string {
 			AddRawClaim("jobs", "actions", r.Machine.Key()).
 			AddRawClaim("jobs", "log", r.Machine.Key()).
 			AddRawClaim("tasks", "get", "*").
+			AddRawClaim("bootenvs", "get", "*").
+			AddRawClaim("isos", "get", "*").
+			AddRawClaim("files", "get", "*").
 			AddRawClaim("info", "get", "*").
 			AddRawClaim("events", "post", "*").
 			AddRawClaim("reservations", "get,create", "*").
@@ -759,6 +769,9 @@ func (r *RenderData) GenerateInfiniteToken() string {
 		AddRawClaim("jobs", "actions", r.Machine.Key()).
 		AddRawClaim("jobs", "log", r.Machine.Key()).
 		AddRawClaim("tasks", "get", "*").
+		AddRawClaim("bootenvs", "get", "*").
+		AddRawClaim("isos", "get", "*").
+		AddRawClaim("files", "get", "*").
 		AddRawClaim("info", "get", "*").
 		AddRawClaim("events", "post", "*").
 		AddRawClaim("reservations", "get,create", "*").

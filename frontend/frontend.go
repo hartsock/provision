@@ -165,17 +165,8 @@ type Frontend struct {
 	authSource AuthSource
 	pubs       *backend.Publishers
 	melody     *melody.Melody
-	ApiPort    int
-	ProvPort   int
-	TftpPort   int
-	DhcpPort   int
-	BinlPort   int
-	NoDhcp     bool
-	NoTftp     bool
-	NoProv     bool
-	NoBinl     bool
 	SaasDir    string
-	DrpIds     []string
+	info       *models.Info
 }
 
 func (f *Frontend) l(c *gin.Context) logger.Logger {
@@ -492,30 +483,20 @@ func NewFrontend(
 	dt *backend.DataTracker,
 	lgr logger.Logger,
 	address string,
-	apiport, provport, dhcpport, binlport int,
+	info *models.Info,
 	fileRoot, localUI, UIUrl string,
 	authSource AuthSource,
 	pubs *backend.Publishers,
-	drpids []string,
 	pc *backend.PluginController,
-	noDhcp, noTftp, noProv, noBinl bool,
 	saasDir string) (me *Frontend) {
 	me = &Frontend{
 		Logger:     lgr,
 		FileRoot:   fileRoot,
 		dt:         dt,
+		info:       info,
 		pubs:       pubs,
 		pc:         pc,
-		ApiPort:    apiport,
-		ProvPort:   provport,
-		DhcpPort:   dhcpport,
-		BinlPort:   binlport,
-		NoDhcp:     noDhcp,
-		NoTftp:     noTftp,
-		NoProv:     noProv,
-		NoBinl:     noBinl,
 		SaasDir:    saasDir,
-		DrpIds:     drpids,
 		authSource: authSource,
 	}
 	gin.SetMode(gin.ReleaseMode)

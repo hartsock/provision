@@ -779,13 +779,13 @@ func (rt *RequestTracker) urlFor(scheme string, remoteIP net.IP, port int) strin
 // ApiURL is a helper function to return the appropriate
 // URL to access the API based upon the remote IP.
 func (rt *RequestTracker) ApiURL(remoteIP net.IP) string {
-	return rt.urlFor("https", remoteIP, rt.dt.ApiPort)
+	return rt.urlFor("https", remoteIP, rt.dt.Info.ApiPort)
 }
 
 // FileURL is a helper function to return the appropriate
 // URL to access the FileServer based upon the remote IP.
 func (rt *RequestTracker) FileURL(remoteIP net.IP) string {
-	return rt.urlFor("http", remoteIP, rt.dt.StaticPort)
+	return rt.urlFor("http", remoteIP, rt.dt.Info.FilePort)
 }
 
 // FileRoot is a helper function to return the full path

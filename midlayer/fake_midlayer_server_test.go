@@ -42,15 +42,15 @@ func fakeServer() error {
 	if err != nil {
 		panic("Cannot happen")
 	}
+	info := &models.Info{ApiPort: 8092, FilePort: 8091, Id: "fred"}
+	info.Fill()
 	dataTracker = backend.NewDataTracker(s,
 		ss,
 		tmpDir,
 		tmpDir,
 		"127.0.0.1",
 		false,
-		8091,
-		8092,
-		"fred",
+		info,
 		l,
 		map[string]string{"systemGrantorSecret": "itisfred", "defaultStage": "none", "defaultBootEnv": "local", "unknownBootEnv": "ignore"},
 		backend.NewPublishers(baseLog),

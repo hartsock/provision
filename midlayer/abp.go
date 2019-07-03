@@ -173,7 +173,7 @@ func (dhr *DhcpRequest) bsdpFromBootenv(serverID net.IP) *models.BsdpBootOption 
 			}
 			img.RootPath = fmt.Sprintf("http://%s:%d%s",
 				serverID,
-				dhr.handler.bk.StaticPort,
+				dhr.handler.bk.Info.FilePort,
 				dhr.bootEnv.PathFor(img.RootPath, "amd64"))
 		}
 	}

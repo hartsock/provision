@@ -79,7 +79,8 @@ func (fe *Frontend) getEndpointUrl(c *gin.Context, id, rest string) (string, str
 		}
 
 		// is this owned by me?
-		for _, myid := range fe.DrpIds {
+		drpIds := []string{fe.info.Id, fe.info.LocalId, fe.info.HaId}
+		for _, myid := range drpIds {
 			if e == myid {
 				p := res.GetParams()
 				s, ok := p["manager/forward-url"].(string)
@@ -182,7 +183,8 @@ func (fe *Frontend) processRequestWithForwarding(c *gin.Context, obj interface{}
 		if owner == "" {
 			return false, false // This is mine, don't forward.
 		}
-		for _, id := range fe.DrpIds {
+		drpIds := []string{fe.info.Id, fe.info.LocalId, fe.info.HaId}
+		for _, id := range drpIds {
 			if owner == id {
 				return false, false // This is mine, don't forward.
 			}

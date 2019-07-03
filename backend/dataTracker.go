@@ -434,33 +434,32 @@ func (p *DataTracker) logCheck(prefName, prefVal string) (logName, logTarget str
 // a dataTracker.
 type DataTracker struct {
 	logger.Logger
-	FileRoot            string
-	LogRoot             string
-	OurAddress          string
-	ForceOurAddress     bool
-	Cleanup             bool
-	StaticPort, ApiPort int
-	DrpId               string
-	FS                  *FileSystem
-	Backend             *DataStack
-	Secrets             store.Store
-	secretsMux          *sync.Mutex
-	objs                map[string]*Store
-	defaultPrefs        map[string]string
-	runningPrefs        map[string]string
-	prefMux             *sync.Mutex
-	allMux              *sync.RWMutex
-	GlobalProfileName   string
-	tokenManager        *JwtManager
-	rootTemplate        *template.Template
-	tmplMux             *sync.Mutex
-	thunks              []func()
-	thunkMux            *sync.Mutex
-	publishers          *Publishers
-	macAddrMap          map[string]string
-	macAddrMux          *sync.RWMutex
-	licenses            models.LicenseBundle
-	pc                  *PluginController
+	FileRoot          string
+	LogRoot           string
+	OurAddress        string
+	ForceOurAddress   bool
+	Cleanup           bool
+	Info              *models.Info
+	FS                *FileSystem
+	Backend           *DataStack
+	Secrets           store.Store
+	secretsMux        *sync.Mutex
+	objs              map[string]*Store
+	defaultPrefs      map[string]string
+	runningPrefs      map[string]string
+	prefMux           *sync.Mutex
+	allMux            *sync.RWMutex
+	GlobalProfileName string
+	tokenManager      *JwtManager
+	rootTemplate      *template.Template
+	tmplMux           *sync.Mutex
+	thunks            []func()
+	thunkMux          *sync.Mutex
+	publishers        *Publishers
+	macAddrMap        map[string]string
+	macAddrMux        *sync.RWMutex
+	licenses          models.LicenseBundle
+	pc                *PluginController
 }
 
 func (p *DataTracker) LogFor(s string) logger.Logger {
@@ -804,7 +803,7 @@ func (p *DataTracker) AddStoreType(prefix string, schema interface{}) error {
 func NewDataTracker(backend *DataStack,
 	secrets store.Store,
 	fileRoot, logRoot, addr string, forceAddr bool,
-	staticPort, apiPort int, drpId string,
+	info *models.Info,
 	logger logger.Logger,
 	defaultPrefs map[string]string,
 	publishers *Publishers,
@@ -814,9 +813,7 @@ func NewDataTracker(backend *DataStack,
 		Secrets:           secrets,
 		FileRoot:          fileRoot,
 		LogRoot:           logRoot,
-		StaticPort:        staticPort,
-		ApiPort:           apiPort,
-		DrpId:             drpId,
+		Info:              info,
 		OurAddress:        addr,
 		ForceOurAddress:   forceAddr,
 		Logger:            logger,
