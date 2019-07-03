@@ -138,13 +138,13 @@ func (dt *DataTracker) loadLicense(rt *RequestTracker) {
 			found = true
 			break
 		}
-		if e == dt.DrpId {
+		if e == dt.Info.Id {
 			found = true
 			break
 		}
 	}
 	if hasOne && !found {
-		rt.Errorf("License contains Endpoints and this one (%s) is not listed.", dt.DrpId)
+		rt.Errorf("License contains Endpoints and this one (%s) is not listed.", dt.Info.Id)
 		rt.Errorf("Contact support@rackn.com for an updated license")
 		return
 	}

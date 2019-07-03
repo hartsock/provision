@@ -4,7 +4,6 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/digitalrebar/provision"
 	"github.com/digitalrebar/provision/backend"
 	"github.com/digitalrebar/provision/backend/index"
 	"github.com/digitalrebar/provision/models"
@@ -19,22 +18,8 @@ type InfoResponse struct {
 }
 
 func (f *Frontend) GetInfo(c *gin.Context) (*models.Info, *models.Error) {
-	i := &models.Info{
-		Version:            provision.RSVersion,
-		Id:                 f.DrpIds[0],
-		HaId:               f.DrpIds[2],
-		ApiPort:            f.ApiPort,
-		FilePort:           f.ProvPort,
-		TftpPort:           f.TftpPort,
-		DhcpPort:           f.DhcpPort,
-		BinlPort:           f.BinlPort,
-		TftpEnabled:        !f.NoTftp,
-		DhcpEnabled:        !f.NoDhcp,
-		ProvisionerEnabled: !f.NoProv,
-		BinlEnabled:        !f.NoBinl,
-		License:            f.dt.AllLicenses(),
-	}
-	i.Fill()
+	i := *f.info
+	i.License = f.dt.AllLicenses()
 
 	res := &models.Error{
 		Code:  http.StatusInternalServerError,
@@ -60,7 +45,7 @@ func (f *Frontend) GetInfo(c *gin.Context) (*models.Info, *models.Error) {
 		res = nil
 	}
 
-	return i, res
+	return &i, res
 }
 
 func (f *Frontend) InitInfoApi() {

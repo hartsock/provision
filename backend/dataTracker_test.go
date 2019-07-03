@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/digitalrebar/logger"
+	"github.com/digitalrebar/provision"
 	"github.com/digitalrebar/provision/models"
 	"github.com/digitalrebar/provision/store"
 )
@@ -74,15 +75,15 @@ func mkDT() *DataTracker {
 	if err != nil {
 		panic("Cannot happen")
 	}
+	info := &models.Info{ApiPort: 8092, FilePort: 8091, Id: "fred", Version: provision.RSVersion}
+	info.Fill()
 	dt := NewDataTracker(s,
 		ss,
 		tmpDir,
 		tmpDir,
 		"127.0.0.1",
 		false,
-		8091,
-		8092,
-		"fred",
+		info,
 		l,
 		map[string]string{"systemGrantorSecret": "itisfred", "defaultStage": "none", "defaultBootEnv": "local", "unknownBootEnv": "ignore"},
 		NewPublishers(baseLog),

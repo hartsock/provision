@@ -25,6 +25,11 @@ ExpandParam = {{.ParamExpand "fooExpand"}}`
 BootEnv:
 Name = {{.Env.Name}}
 
+{{.Info.Version}}
+{{.Info.Id}}
+{{.Info.HasFeature "jj"}}
+{{.Info.HasFeature "file-iso-exists-info-render"}}
+
 {{if .ParamExists "fred"}}{{.Param "fred"}}{{end}}
 
 {{if .ParamExists "obj" -}}
@@ -49,6 +54,11 @@ ExpandParam = barhttp://127.0.0.1:8091
 BootEnv:
 Name = default
 
+v3.10.1000-pre-alpha-NotSet
+fred
+false
+true
+
 
 
 RenderData:
@@ -66,6 +76,11 @@ ExpandParam = barhttp://127.0.0.1:8091
 
 BootEnv:
 Name = default
+
+v3.10.1000-pre-alpha-NotSet
+fred
+false
+true
 
 fred = fred
 

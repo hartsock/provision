@@ -294,6 +294,7 @@ func bootstrapPlugins(
 	localLogger *log.Logger,
 	l logger.Logger,
 	cOpts *ProgOpts,
+	info *models.Info,
 	secretStore store.Store) (*backend.PluginController, map[string]*models.PluginProvider, error) {
 	localLogger.Printf("Bootstrapping plugins")
 	scratchStore, err := backend.InitDataStack(cOpts.SaasContentRoot, cOpts.FileRoot, l)
@@ -308,9 +309,7 @@ func bootstrapPlugins(
 		cOpts.LogRoot,
 		"127.0.0.1",
 		cOpts.ForceStatic,
-		cOpts.StaticPort,
-		cOpts.APIPort,
-		cOpts.HaID,
+		info,
 		l,
 		map[string]string{
 			"debugBootEnv":        cOpts.DebugBootEnv,
@@ -335,10 +334,9 @@ func bootstrapPlugins(
 	}
 	fe := frontend.NewFrontend(dt, l,
 		"127.0.0.1",
-		cOpts.APIPort, cOpts.StaticPort, cOpts.DhcpPort, cOpts.BinlPort,
+		info,
 		cOpts.FileRoot,
-		cOpts.LocalUI, cOpts.UIUrl, nil, publishers, []string{cOpts.DrpID, cOpts.DrpID, cOpts.HaID}, pc,
-		cOpts.DisableDHCP, cOpts.DisableTftpServer, cOpts.DisableProvisioner, cOpts.DisableBINL,
+		cOpts.LocalUI, cOpts.UIUrl, nil, publishers, pc,
 		cOpts.SaasContentRoot)
 	srv := &http.Server{
 		TLSConfig: &tls.Config{},
@@ -434,7 +432,26 @@ func server(localLogger *log.Logger, cOpts *ProgOpts) error {
 	if cOpts.HaID == "" {
 		cOpts.HaID = cOpts.DrpID
 	}
-	pc, providers, err := bootstrapPlugins(localLogger, buf.Log("bootstrap"), cOpts, secretStore)
+
+	// Build an info struct to pass around
+	info := &models.Info{
+		Version:            provision.RSVersion,
+		Id:                 cOpts.DrpID,
+		LocalId:            localID,
+		HaId:               cOpts.HaID,
+		ApiPort:            cOpts.APIPort,
+		FilePort:           cOpts.StaticPort,
+		TftpPort:           cOpts.TftpPort,
+		DhcpPort:           cOpts.DhcpPort,
+		BinlPort:           cOpts.BinlPort,
+		TftpEnabled:        !cOpts.DisableTftpServer,
+		DhcpEnabled:        !cOpts.DisableDHCP,
+		ProvisionerEnabled: !cOpts.DisableProvisioner,
+		BinlEnabled:        !cOpts.DisableBINL,
+	}
+	info.Fill()
+
+	pc, providers, err := bootstrapPlugins(localLogger, buf.Log("bootstrap"), cOpts, info, secretStore)
 	if err != nil {
 		return fmt.Errorf("Error bootstrapping plugins: %v", err)
 	}
@@ -477,9 +494,7 @@ func server(localLogger *log.Logger, cOpts *ProgOpts) error {
 		cOpts.LogRoot,
 		cOpts.OurAddress,
 		cOpts.ForceStatic,
-		cOpts.StaticPort,
-		cOpts.APIPort,
-		cOpts.HaID,
+		info,
 		buf.Log("backend"),
 		map[string]string{
 			"debugBootEnv":        cOpts.DebugBootEnv,
@@ -508,14 +523,10 @@ func server(localLogger *log.Logger, cOpts *ProgOpts) error {
 
 	fe := frontend.NewFrontend(dt, buf.Log("frontend"),
 		cOpts.OurAddress,
-		cOpts.APIPort, cOpts.StaticPort, cOpts.DhcpPort, cOpts.BinlPort,
+		info,
 		cOpts.FileRoot,
-		cOpts.LocalUI, cOpts.UIUrl, nil, publishers, []string{cOpts.DrpID, localID, cOpts.HaID}, pc,
-		cOpts.DisableDHCP, cOpts.DisableTftpServer, cOpts.DisableProvisioner, cOpts.DisableBINL,
+		cOpts.LocalUI, cOpts.UIUrl, nil, publishers, pc,
 		cOpts.SaasContentRoot)
-	fe.TftpPort = cOpts.TftpPort
-	fe.BinlPort = cOpts.BinlPort
-	fe.NoBinl = cOpts.DisableBINL
 	backend.SetLogPublisher(buf, publishers)
 	pc.AddStorageType = fe.AddStorageType
 

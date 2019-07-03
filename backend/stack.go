@@ -330,13 +330,13 @@ func (d *DataStack) Validate(
 	fileRoot string,
 	secrets store.Store,
 	logger logger.Logger) (hard, soft error) {
+	info := &models.Info{FilePort: 1, ApiPort: 2}
 	res := &DataTracker{
 		Backend:           d,
 		Secrets:           secrets,
 		FileRoot:          fileRoot,
+		Info:              info,
 		LogRoot:           "baddir",
-		StaticPort:        1,
-		ApiPort:           2,
 		Logger:            logger,
 		defaultPrefs:      map[string]string{},
 		runningPrefs:      map[string]string{},
