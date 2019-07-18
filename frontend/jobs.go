@@ -171,6 +171,37 @@ type JobActionBodyParameter struct {
 	Body map[string]interface{}
 }
 
+func logRead(f *Frontend) func(*gin.Context) {
+	return func(c *gin.Context) {
+		uuid := c.Param(`uuid`)
+		j := &backend.Job{}
+		var bad bool
+		var err *models.Error
+		var path string
+		rt := f.rt(c, j.Locks("get")...)
+		rt.Do(func(d backend.Stores) {
+			var jo models.Model
+			if jo = rt.Find("jobs", uuid); jo == nil {
+				err = &models.Error{Code: http.StatusNotFound, Type: backend.ValidationError,
+					Messages: []string{fmt.Sprintf("Job %s does not exist", uuid)}}
+				bad = true
+				return
+			}
+			j = backend.AsJob(jo)
+			path = j.LogPath(rt)
+		})
+		if bad {
+			c.JSON(err.Code, err)
+			return
+		}
+		if !f.assureSimpleAuth(c, rt, "jobs", "log", j.AuthKey()) {
+			return
+		}
+		c.Writer.Header().Set("Content-Type", "application/octet-stream")
+		c.File(path)
+	}
+}
+
 func (f *Frontend) InitJobApi() {
 	// swagger:route GET /jobs Jobs listJobs
 	//
@@ -468,6 +499,23 @@ func (f *Frontend) InitJobApi() {
 			c.JSON(http.StatusOK, actions)
 
 		})
+	// swagger:route HEAD /jobs/{uuid}/log Jobs getJobLog
+	//
+	// Get the log for this job
+	//
+	// Get log for the Job specified by {uuid} or return NotFound.
+	//
+	//     Produces:
+	//       application/octet-stream
+	//       application/json
+	//
+	//     Responses:
+	//       200: JobLogResponse
+	//       401: NoContentResponse
+	//       403: NoContentResponse
+	//       404: ErrorResponse
+	//       500: ErrorResponse
+	f.ApiGroup.HEAD("/jobs/:uuid/log", logRead(f))
 
 	// swagger:route GET /jobs/{uuid}/log Jobs getJobLog
 	//
@@ -485,37 +533,7 @@ func (f *Frontend) InitJobApi() {
 	//       403: NoContentResponse
 	//       404: ErrorResponse
 	//       500: ErrorResponse
-	f.ApiGroup.GET("/jobs/:uuid/log",
-		func(c *gin.Context) {
-			uuid := c.Param(`uuid`)
-			j := &backend.Job{}
-			var bad bool
-			var err *models.Error
-			var path string
-			rt := f.rt(c, j.Locks("get")...)
-			rt.Do(func(d backend.Stores) {
-				var jo models.Model
-				if jo = rt.Find("jobs", uuid); jo == nil {
-					err = &models.Error{Code: http.StatusNotFound, Type: backend.ValidationError,
-						Messages: []string{fmt.Sprintf("Job %s does not exist", uuid)}}
-					bad = true
-					return
-				}
-				j = backend.AsJob(jo)
-				path = j.LogPath(rt)
-			})
-			if bad {
-				c.JSON(err.Code, err)
-				return
-			}
-
-			if !f.assureSimpleAuth(c, rt, "jobs", "log", j.AuthKey()) {
-				return
-			}
-
-			c.Writer.Header().Set("Content-Type", "application/octet-stream")
-			c.File(path)
-		})
+	f.ApiGroup.GET("/jobs/:uuid/log", logRead(f))
 
 	// swagger:route PUT /jobs/{uuid}/log Jobs putJobLog
 	//
