@@ -49,10 +49,7 @@ func pickMostExpired(s *Subnet, usedAddrs map[string]models.Model, token string,
 	return nil, true
 }
 
-func pickHint(s *Subnet, usedAddrs map[string]models.Model, token string, hint, via net.IP) (*Lease, bool) {
-	if hint == nil || !s.InActiveRange(hint) {
-		return nil, true
-	}
+func pickAddrHint(s *Subnet, usedAddrs map[string]models.Model, token string, hint, via net.IP) (*Lease, bool) {
 	hex := models.Hexaddr(hint)
 	res, found := usedAddrs[hex]
 	if !found {
@@ -75,6 +72,30 @@ func pickHint(s *Subnet, usedAddrs map[string]models.Model, token string, hint, 
 		}
 	}
 	return nil, false
+}
+
+func pickHint(s *Subnet, usedAddrs map[string]models.Model, token string, hint, via net.IP) (*Lease, bool) {
+	if !s.InActiveRange(hint) {
+		return nil, true
+	}
+	if hint != nil {
+		return pickAddrHint(s, usedAddrs, token, hint, via)
+	}
+	// Pick via matching Token and Strategy against used addresses
+	var lease *Lease
+	for _, v := range usedAddrs {
+		l, ok := v.(*Lease)
+		if !(ok && l.Token == token && l.Strategy == s.Strategy) {
+			continue
+		}
+		if lease == nil || l.ExpireTime.After(lease.ExpireTime) {
+			lease = l
+		}
+	}
+	if lease != nil {
+		return lease, false
+	}
+	return nil, true
 }
 
 func pickNextFree(s *Subnet, usedAddrs map[string]models.Model, token string, hint, via net.IP) (*Lease, bool) {
