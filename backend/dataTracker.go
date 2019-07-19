@@ -626,6 +626,37 @@ func (p *DataTracker) rebuildCache(loadRT *RequestTracker) (hard, soft *models.E
 		} else {
 			p.reportErrors(prefix, obj, hard)
 		}
+		if prefix == "leases" {
+			ms := map[string]*Lease{}
+			for i := range res {
+				lease := AsLease(res[i])
+				if lease.State == "PROBE" || lease.State == "INVALID" {
+					loadRT.Infof("Shooting down lease %s:%s addr %s in state %s",
+						lease.Strategy, lease.Token, lease.Addr, lease.State)
+					bk.Remove(lease.Key())
+					continue
+				}
+				key := lease.Strategy + ":" + lease.Token
+				if other, ok := ms[key]; ok {
+					if lease.ExpireTime.Before(other.ExpireTime) {
+						loadRT.Warnf("Shooting down conflicting lease %s:%s addr %s in favor of %s",
+							lease.Strategy, lease.Token, lease.Addr, other.Addr)
+						bk.Remove(lease.Key())
+					} else {
+						loadRT.Warnf("Shooting down conflicting lease %s:%s addr %s in favor of %s",
+							other.Strategy, other.Token, other.Addr, lease.Addr)
+						bk.Remove(other.Key())
+						ms[key] = lease
+					}
+				} else {
+					ms[key] = lease
+				}
+			}
+			res = make([]models.Model, 0, len(ms))
+			for _, v := range ms {
+				res = append(res, v)
+			}
+		}
 		p.objs[prefix].Index = *index.Create(res)
 	}
 	if hard.ContainsError() {
@@ -644,12 +675,6 @@ func (p *DataTracker) rebuildCache(loadRT *RequestTracker) (hard, soft *models.E
 				ts := p.regenSecureParams(loadRT, v, hard, soft)
 				if ts != nil {
 					toSave = append(toSave, ts.(store.KeySaver))
-				}
-			}
-			if prefix == "leases" {
-				lease := AsLease(res[i])
-				if lease.State == "PROBE" {
-					lease.Invalidate()
 				}
 			}
 			if v, ok := res[i].(store.LoadHooker); ok {
