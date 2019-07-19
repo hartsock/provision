@@ -39,6 +39,7 @@ Options:
     --drp-user=<string>     # DRP user to create after system start (only with --systemd)
     --drp-password=<string> # DRP user passowrd to set after system start (only with --systemd)
     --remove-rocketskates   # Remove the rocketskates user after system start (only with --systemd)
+    --local-ui              # Set up DRP to server a local UI
 
     install                 # Sets up an isolated or system 'production' enabled install.
     upgrade                 # Sets the installer to upgrade an existing 'dr-provision'
@@ -55,6 +56,7 @@ Defaults are:
     drp-id              = unset            ha-id               = unset
     drp-user            = rocketskates     drp-password        = r0cketsk8ts
     startup             = false            keep-installer      = false
+    local-ui            = false
 
     * version examples: 'tip', 'v3.13.6' or 'stable'
 
@@ -82,6 +84,7 @@ FAST_DOWNLOADER=false
 SYSTEMD=false
 STARTUP=false
 REMOVE_RS=false
+LOCAL_UI=false
 KEEP_INSTALLER=false
 _sudo="sudo"
 CLI="/usr/local/bin/drpcli"
@@ -152,6 +155,9 @@ while (( $# > 0 )); do
             ;;
         --systemd)
             SYSTEMD=true
+            ;;
+        --local-ui)
+            LOCAL_UI=true
             ;;
         --remove-rocketskates)
             REMOVE_RS=true
@@ -611,6 +617,13 @@ EOF
 [Service]
 Environment=RS_STATIC_IP=$IPADDR
 Environment=RS_FORCE_STATIC=true
+EOF
+                     fi
+                     if [[ $LOCAL_UI ]] ; then
+                       cat > /etc/systemd/system/dr-provision.service.d/local-ui.conf <<EOF
+[Service]
+Environment=RS_LOCAL_UI=tftpboot/files/ux
+Environment=RS_UI_URL=/ux
 EOF
                      fi
 
