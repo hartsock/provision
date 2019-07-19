@@ -258,7 +258,7 @@ func (j *Job) Indexes() map[string]index.Maker {
 		},
 	}
 	res["Machine"] = index.Maker{
-		Unique: true,
+		Unique: false,
 		Type:   "UUID string",
 		Less:   func(i, j models.Model) bool { return fix(i).Machine.String() < fix(j).Machine.String() },
 		Eq:     func(i, j models.Model) bool { return fix(i).Machine.String() == fix(j).Machine.String() },
