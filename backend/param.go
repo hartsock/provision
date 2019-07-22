@@ -142,6 +142,16 @@ func validateAgainstSchema(val interface{}, schema *gojsonschema.Schema) error {
 	return e
 }
 
+func (p *Param) ValidateDecodedValue(val interface{}) error {
+	if p.Schema == nil {
+		return nil
+	}
+	if p.validator == nil {
+		p.validator, _ = gojsonschema.NewSchema(gojsonschema.NewGoLoader(p.Schema))
+	}
+	return validateAgainstSchema(val, p.validator)
+}
+
 func (p *Param) ValidateValue(val interface{}, key []byte) error {
 	if !p.Useable() {
 		return p.MakeError(422, ValidationError, p)
@@ -161,24 +171,7 @@ func (p *Param) ValidateValue(val interface{}, key []byte) error {
 		}
 		rv = realVal
 	}
-	if p.Schema == nil {
-		return nil
-	}
-	if p.validator == nil {
-		p.validator, _ = gojsonschema.NewSchema(gojsonschema.NewGoLoader(p.Schema))
-	}
-	res, err := p.validator.Validate(gojsonschema.NewGoLoader(rv))
-	if err != nil {
-		return err
-	}
-	if res.Valid() {
-		return nil
-	}
-	e := &models.Error{}
-	for _, i := range res.Errors() {
-		e.Errorf(i.String())
-	}
-	return e
+	return p.ValidateDecodedValue(rv)
 }
 
 func ValidateParams(rt *RequestTracker, e models.ErrorAdder, params map[string]interface{}, key []byte) {
