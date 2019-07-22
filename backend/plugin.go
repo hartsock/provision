@@ -199,35 +199,27 @@ func (pc *PluginController) allPlugins(provider, action string, pl *models.Plugi
 func validateParameters(rt *RequestTracker, pp *models.PluginProvider, plugin *models.Plugin) []string {
 	errors := []string{}
 	for _, parmName := range pp.RequiredParams {
-		obj, ok := plugin.Params[parmName]
+		obj, ok := rt.GetParam(plugin, parmName, true, true)
 		if !ok {
 			errors = append(errors, fmt.Sprintf("Missing required parameter: %s", parmName))
 		} else {
 			pobj := rt.Find("params", parmName)
 			if pobj != nil {
 				rp := pobj.(*Param)
-				if pk, pkerr := rt.PrivateKeyFor(plugin); pkerr == nil {
-					if ev := rp.ValidateValue(obj, pk); ev != nil {
-						errors = append(errors, ev.Error())
-					}
-				} else {
-					errors = append(errors, pkerr.Error())
+				if ev := rp.ValidateDecodedValue(obj); ev != nil {
+					errors = append(errors, ev.Error())
 				}
 			}
 		}
 	}
 	for _, parmName := range pp.OptionalParams {
-		obj, ok := plugin.Params[parmName]
+		obj, ok := rt.GetParam(plugin, parmName, true, true)
 		if ok {
 			pobj := rt.Find("params", parmName)
 			if pobj != nil {
 				rp := pobj.(*Param)
-				if pk, pkerr := rt.PrivateKeyFor(plugin); pkerr == nil {
-					if ev := rp.ValidateValue(obj, pk); ev != nil {
-						errors = append(errors, ev.Error())
-					}
-				} else {
-					errors = append(errors, pkerr.Error())
+				if ev := rp.ValidateDecodedValue(obj); ev != nil {
+					errors = append(errors, ev.Error())
 				}
 			}
 		}
