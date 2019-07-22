@@ -340,12 +340,10 @@ func (pc *PluginController) UploadPluginProvider(c *gin.Context, fileRoot, name 
 				fmt.Sprintf("upload: Unable to upload %s: missing body", name))
 		}
 	case `multipart/form-data`:
-		header, err := c.FormFile("file")
-		if err != nil {
+		if _, err := c.FormFile("file"); err != nil {
 			return nil, models.NewError("API ERROR", http.StatusBadRequest,
 				fmt.Sprintf("upload: Failed to find multipart file: %v", err))
 		}
-		name = path.Base(header.Filename)
 	default:
 		return nil, models.NewError("API ERROR", http.StatusUnsupportedMediaType,
 			fmt.Sprintf("upload: plugin_provider %s content-type %s is not application/octet-stream or multipart/form-data", name, ctype))
@@ -405,7 +403,8 @@ func (pc *PluginController) UploadPluginProvider(c *gin.Context, fileRoot, name 
 	}
 	rt.AllLocked(func(d Stores) {
 		ds := pc.dt.Backend
-		nbs, hard, _ := ds.AddReplacePluginLayer(name, ns, pc.dt.Secrets, pc.dt.Logger, forceParamRemoval)
+		rt.Errorf("GREG: Inject %s as %s\n", pp.Name, name)
+		nbs, hard, _ := ds.AddReplacePluginLayer(pp.Name, ns, pc.dt.Secrets, pc.dt.Logger, forceParamRemoval)
 		if hard != nil {
 			rt.Errorf("Skipping %s because of bad store errors: %v\n", pp.Name, hard)
 			err = hard
