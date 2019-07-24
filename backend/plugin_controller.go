@@ -16,7 +16,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/digitalrebar/logger"
 	"github.com/digitalrebar/provision/models"
@@ -88,23 +87,13 @@ func ReverseProxy(pc *PluginController) gin.HandlerFunc {
 	}
 }
 
-func (pc *PluginController) definePluginProvider(rt *RequestTracker, provider, contentDir string) (*models.PluginProvider, error) {
+func (pc *PluginController) definePluginProvider(provider, contentDir string) (*models.PluginProvider, error) {
 	pc.Infof("Importing plugin provider: %s\n", provider)
 	cmd := exec.Command(provider, "define")
 
 	// Setup env vars to run plugin - auth should be parameters.
-	claims := NewClaim(provider, "system", time.Hour*1).
-		AddRawClaim("*", "get", "*").
-		AddSecrets("", "", "")
-	token, _ := rt.SealClaims(claims)
-	apiURL := rt.ApiURL(net.ParseIP("127.0.0.1"))
-	staticURL := rt.FileURL(net.ParseIP("127.0.0.1"))
-
 	env := os.Environ()
-	env = append(env, fmt.Sprintf("RS_ENDPOINT=%s", apiURL))
-	env = append(env, fmt.Sprintf("RS_FILESERVER=%s", staticURL))
-	env = append(env, fmt.Sprintf("RS_TOKEN=%s", token))
-	env = append(env, fmt.Sprintf("RS_WEBROOT=%s", rt.FileRoot()))
+	env = append(env, "RS_TOKEN=catalog")
 	cmd.Env = env
 
 	out, err := cmd.CombinedOutput()
@@ -139,7 +128,7 @@ func (pc *PluginController) definePluginProvider(rt *RequestTracker, provider, c
 	return pp, nil
 }
 
-func (pc *PluginController) define(rt *RequestTracker, contentDir string) (map[string]*models.PluginProvider, error) {
+func (pc *PluginController) define(contentDir string) (map[string]*models.PluginProvider, error) {
 	providers := map[string]*models.PluginProvider{}
 	files, err := ioutil.ReadDir(pc.pluginDir)
 	if err != nil {
@@ -148,7 +137,7 @@ func (pc *PluginController) define(rt *RequestTracker, contentDir string) (map[s
 	}
 	for _, f := range files {
 		pc.Debugf("PluginController Define: getting definition for %s\n", f.Name())
-		pp, perr := pc.definePluginProvider(rt, path.Join(pc.pluginDir, f.Name()), contentDir)
+		pp, perr := pc.definePluginProvider(path.Join(pc.pluginDir, f.Name()), contentDir)
 		if perr == nil {
 			providers[pp.Name] = pp
 		}
@@ -157,10 +146,10 @@ func (pc *PluginController) define(rt *RequestTracker, contentDir string) (map[s
 	return providers, nil
 }
 
-func (pc *PluginController) Define(rt *RequestTracker, contentDir string) (map[string]*models.PluginProvider, error) {
+func (pc *PluginController) Define(contentDir string) (map[string]*models.PluginProvider, error) {
 	pc.lock.Lock()
 	defer pc.lock.Unlock()
-	return pc.define(rt, contentDir)
+	return pc.define(contentDir)
 }
 
 func (pc *PluginController) Start(
@@ -390,8 +379,7 @@ func (pc *PluginController) UploadPluginProvider(c *gin.Context, fileRoot, name 
 	pc.lock.Lock()
 	defer pc.lock.Unlock()
 	// If it is here, remove it.
-	rt := pc.Request()
-	pp, perr := pc.definePluginProvider(rt, ppTmpName, pc.dt.FileRoot)
+	pp, perr := pc.definePluginProvider(ppTmpName, pc.dt.FileRoot)
 	if perr != nil {
 		return nil, models.NewError("API ERROR", http.StatusBadRequest,
 			fmt.Sprintf("Import plugin failed %s: define failed: %v", name, perr))
@@ -401,9 +389,9 @@ func (pc *PluginController) UploadPluginProvider(c *gin.Context, fileRoot, name 
 		return nil, models.NewError("API ERROR", http.StatusBadRequest,
 			fmt.Sprintf("Import plugin failed %s: bad store: %v", name, err))
 	}
+	rt := pc.Request()
 	rt.AllLocked(func(d Stores) {
 		ds := pc.dt.Backend
-		rt.Errorf("GREG: Inject %s as %s\n", pp.Name, name)
 		nbs, hard, _ := ds.AddReplacePluginLayer(pp.Name, ns, pc.dt.Secrets, pc.dt.Logger, forceParamRemoval)
 		if hard != nil {
 			rt.Errorf("Skipping %s because of bad store errors: %v\n", pp.Name, hard)
