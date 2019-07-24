@@ -86,7 +86,7 @@ func (pc *PluginController) handleEvent(event *models.Event) {
 	case "contents":
 		pc.lock.Lock()
 		defer pc.lock.Unlock()
-		providers, err := pc.define(pc.Request(), pc.dt.FileRoot)
+		providers, err := pc.define(pc.dt.FileRoot)
 		if err != nil {
 			return
 		}

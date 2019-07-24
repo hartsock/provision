@@ -293,61 +293,13 @@ func waitOnAPI(cOpts *ProgOpts) {
 func bootstrapPlugins(
 	localLogger *log.Logger,
 	l logger.Logger,
-	cOpts *ProgOpts,
-	info *models.Info,
-	secretStore store.Store) (*backend.PluginController, map[string]*models.PluginProvider, error) {
+	cOpts *ProgOpts) (*backend.PluginController, map[string]*models.PluginProvider, error) {
 	localLogger.Printf("Bootstrapping plugins")
-	scratchStore, err := backend.InitDataStack(cOpts.SaasContentRoot, cOpts.FileRoot, l)
-	if err != nil {
-		return nil, nil, err
-	}
-	// This is intended to jsut serve license information to the plugins for define
-	publishers := backend.NewPublishers(localLogger)
-	dt := backend.NewDataTracker(scratchStore,
-		secretStore,
-		cOpts.FileRoot,
-		cOpts.LogRoot,
-		"127.0.0.1",
-		cOpts.ForceStatic,
-		info,
-		l,
-		map[string]string{
-			"debugBootEnv":        cOpts.DebugBootEnv,
-			"debugDhcp":           cOpts.DebugDhcp,
-			"debugRenderer":       cOpts.DebugRenderer,
-			"debugFrontend":       cOpts.DebugFrontend,
-			"debugPlugins":        cOpts.DebugPlugins,
-			"defaultStage":        cOpts.DefaultStage,
-			"logLevel":            cOpts.DefaultLogLevel,
-			"defaultBootEnv":      cOpts.DefaultBootEnv,
-			"unknownBootEnv":      cOpts.UnknownBootEnv,
-			"knownTokenTimeout":   fmt.Sprintf("%d", cOpts.KnownTokenTimeout),
-			"unknownTokenTimeout": fmt.Sprintf("%d", cOpts.UnknownTokenTimeout),
-			"baseTokenSecret":     cOpts.BaseTokenSecret,
-			"systemGrantorSecret": cOpts.SystemGrantorSecret,
-		},
-		publishers,
-		nil)
 	pc, err := backend.InitPluginController(cOpts.PluginRoot, cOpts.PluginCommRoot, l)
 	if err != nil {
 		return nil, nil, err
 	}
-	fe := frontend.NewFrontend(dt, l,
-		"127.0.0.1",
-		info,
-		cOpts.FileRoot,
-		cOpts.LocalUI, cOpts.UIUrl, nil, publishers, pc,
-		cOpts.SaasContentRoot)
-	srv := &http.Server{
-		TLSConfig: &tls.Config{},
-		Addr:      fmt.Sprintf("127.0.0.1:%d", cOpts.APIPort),
-		Handler:   fe.MgmtApi,
-	}
-	go srv.ListenAndServeTLS(cOpts.TLSCertFile, cOpts.TLSKeyFile)
-	defer srv.Shutdown(context.Background())
-	waitOnAPI(cOpts)
-	rt := dt.Request(l)
-	providers, err := pc.Define(rt, cOpts.FileRoot)
+	providers, err := pc.Define(cOpts.FileRoot)
 	localLogger.Printf("Plugins bootstrapped")
 	return pc, providers, err
 }
@@ -451,7 +403,7 @@ func server(localLogger *log.Logger, cOpts *ProgOpts) error {
 	}
 	info.Fill()
 
-	pc, providers, err := bootstrapPlugins(localLogger, buf.Log("bootstrap"), cOpts, info, secretStore)
+	pc, providers, err := bootstrapPlugins(localLogger, buf.Log("bootstrap"), cOpts)
 	if err != nil {
 		return fmt.Errorf("Error bootstrapping plugins: %v", err)
 	}
@@ -662,8 +614,7 @@ func server(localLogger *log.Logger, cOpts *ProgOpts) error {
 				os.Exit(1)
 			case syscall.SIGHUP:
 				localLogger.Println("Reloading data stores...")
-				rt := dt.Request(dt.Logger)
-				providers, err = pc.Define(rt, cOpts.FileRoot)
+				providers, err = pc.Define(cOpts.FileRoot)
 				if err != nil {
 					localLogger.Printf("Unable to load data stores from plugins: %v", err)
 					continue
@@ -688,7 +639,7 @@ func server(localLogger *log.Logger, cOpts *ProgOpts) error {
 				if err != nil {
 					localLogger.Printf("Unable to create new DataStack on SIGHUP: %v", err)
 				} else {
-
+					rt := dt.Request(dt.Logger)
 					rt.AllLocked(func(d backend.Stores) {
 						dt.ReplaceBackend(rt, dtStore)
 					})
