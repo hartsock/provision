@@ -25,7 +25,7 @@ elif ! (( ${BASH_REMATCH[1]} > ${WANTED_VER[0]} || ${BASH_REMATCH[2]} >= ${WANTE
     exit -1
 fi
 
-for tool in go-bindata swagger glide; do
+for tool in go-bindata glide; do
     which "$tool" &>/dev/null && continue
     case $tool in
         go-bindata) go get -u github.com/kevinburke/go-bindata/...;;
@@ -35,14 +35,6 @@ for tool in go-bindata swagger glide; do
         *) echo "Don't know how to install $tool"; exit 1;;
     esac
 done
-
-# FIX SWAGGER - this is still why we can't have nice things.
-OLDPWD=`pwd`
-cd ../../go-swagger/go-swagger
-git fetch
-git checkout 0.12.0
-go install github.com/go-swagger/go-swagger/cmd/swagger
-cd $OLDPWD
 
 set +e
 . tools/version.sh
