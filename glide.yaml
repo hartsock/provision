@@ -53,7 +53,5 @@ import:
 - package: github.com/rackn/netwrangler
   version: master
 - package: github.com/j-keck/arping
-- package: github.com/shirou/gopsutil
+- package: github.com/shirou/gopsutil/
   version: ~v2.19
-- package: github.com/kevinburke/go-bindata
-  version: ^3.13.0
