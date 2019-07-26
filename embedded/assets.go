@@ -1,10 +1,6 @@
 package embedded
 
-// Yes - Twice - once to get the basic pieces in place to let swagger run, then the final parts
-//
 //go:generate ../tools/download-assets.sh ../embedded
-//go:generate go-bindata -prefix ../embedded/assets -pkg embedded -o ../embedded/embed.go ../embedded/assets/...
-//go:generate swagger generate spec -i ../server/swagger.base.yml -o ../embedded/assets/swagger.json -b ../server
 //go:generate ../tools/build-all-license.sh .. embedded/assets/ALL-LICENSE
 //go:generate ../tools/build-all-license.sh .. ALL-LICENSE
 //go:generate ../tools/build_cli.sh

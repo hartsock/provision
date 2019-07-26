@@ -25,25 +25,16 @@ elif ! (( ${BASH_REMATCH[1]} > ${WANTED_VER[0]} || ${BASH_REMATCH[2]} >= ${WANTE
     exit -1
 fi
 
-for tool in go-bindata swagger glide; do
+for tool in go-bindata glide; do
     which "$tool" &>/dev/null && continue
     case $tool in
-        go-bindata) go get -u github.com/jteeuwen/go-bindata/...;;
-        swagger)    go get -u github.com/go-swagger/go-swagger/cmd/swagger;;
+        go-bindata) go get -u github.com/kevinburke/go-bindata/...;;
         glide)
             go get -v github.com/Masterminds/glide
             (cd "$GOPATH/src/github.com/Masterminds/glide" && git checkout tags/v0.12.3 && go install);;
         *) echo "Don't know how to install $tool"; exit 1;;
     esac
 done
-
-# FIX SWAGGER - this is still why we can't have nice things.
-OLDPWD=`pwd`
-cd ../../go-swagger/go-swagger
-git fetch
-git checkout 0.12.0
-go install github.com/go-swagger/go-swagger/cmd/swagger
-cd $OLDPWD
 
 set +e
 . tools/version.sh
@@ -63,7 +54,6 @@ export VERFLAGS="-s -w \
           -X github.com/digitalrebar/provision.GitHash=$GITHASH"
 
 glide install
-rm -rf client genmodels embedded/assets/swagger.json
 go generate embedded/assets.go
 
 # Update cli docs if needed. - does change date.
