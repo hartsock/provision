@@ -41,10 +41,7 @@ Make sure you set your information in the exports!
     export PACKET_API_KEY="[packet_api_key]"
     export PACKET_PROJECT_ID="[packet_project_id]"
     # download plugin provider (update for version or archtiecture)
-    curl -o packet-ipmi https://s3-us-west-2.amazonaws.com/rebar-catalog/packet-ipmi/v2.4.0-0-02301d35f9f664d6c81d904c92a9c81d3fd41d2c/amd64/linux/packet-ipmi
-    # install plugin provider
-    drpcli plugin_providers upload packet-ipmi from packet-ipmi
-    # configure plugin
+    drpcli plugin_providers upload packet-ipmi from catalog:packet-ipmi-tip
     drpcli plugins create '{ "Name": "packet-ipmi",
        "Params": {
          "packet/api-key": "$PACKET_API_KEY",
@@ -58,34 +55,25 @@ Make sure you set your information in the exports!
 .. note:: The URLs provided for plugin downloads will change overtime for newer versions
 
 
-Install KRIB Components and Cert Plugin
----------------------------------------
+Install KRIB Components and Prerequisites
+-----------------------------------------
 
-The following steps will install the required plugins and content for KRIB
+The following steps will install the required plugins and content for KRIB to the tip version.  Change `tip` to `stable' to use the stable version.
 
   ::
 
-    # download cert plugin provider (installs the plugin autmatically)
-    curl -o certs https://s3-us-west-2.amazonaws.com/rebar-catalog/certs/v2.4.0-0-02301d35f9f664d6c81d904c92a9c81d3fd41d2c/amd64/linux/certs
-    # install plugin provider
-    drpcli plugin_providers upload certs from certs
-    # verify it worked - should return true
-    drpcli plugins show certs | jq .Available
-
-    # Get code
-    git clone https://github.com/digitalrebar/provision-content
-    cd provision-content/krib
-
-    # KRIB content install
-    drpcli contents bundle krib.yaml
-    drpcli contents upload krib.yaml
+    export KRIBVER="tip"
+    drpcli plugin_providers upload certs from catalog:certs-$KRIBVER
+    drpcli contents upload catalog:drp-community-content-$KRIBVER
+    drpcli contents upload catalog:task-library-$KRIBVER
+    drpcli contents upload catalog:krib-$KRIBVER
 
 .. note:: This is maintained with more detail at :ref:`component_krib`.
 
-Create Machines (skip if using Terraform)
------------------------------------------
+Create Machines
+---------------
 
-You do NOT need to create machines if you are using the Terraform integration to build the KRIB cluster!  To create machines in Packet without a Terraform, use the following command:
+To create machines in Packet without a Terraform, use the following command:
 
   ::
 
