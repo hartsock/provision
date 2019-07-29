@@ -22,10 +22,10 @@ func (dhr *DhcpRequest) marshalText(p dhcp.Packet) ([]byte, error) {
 		dhr.srcAddr.String(),
 		dhr.lPort)
 	fmt.Fprintf(buf, "op:%#02x htype:%#02x hlen:%#02x hops:%#02x xid:%#08x secs:%#04x flags:%#04x\n",
-		p.OpCode(),
-		p.HType(),
-		p.HLen(),
-		p.Hops(),
+		byte(p.OpCode()),
+		byte(p.HType()),
+		byte(p.HLen()),
+		byte(p.Hops()),
 		binary.BigEndian.Uint32(p.XId()),
 		binary.BigEndian.Uint16(p.Secs()),
 		binary.BigEndian.Uint16(p.Flags()))
